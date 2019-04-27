@@ -4,7 +4,9 @@
   "description": "React template for TRC Plugins",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build" : "webpack",
+    "start": "npm run build && node node_modules/trc.runplugin/index.js dist"
   },
   "author": "",
   "license": "ISC",
@@ -17,6 +19,7 @@
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.1",
     "source-map-loader": "^0.2.4",
+    "trc.runplugin": "^1.4.4",
     "typescript": "^3.4.5"
   }
 }

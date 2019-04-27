@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build" : "webpack",
+    "build": "webpack",
     "start": "npm run build && node node_modules/trc.runplugin/index.js dist"
   },
   "author": "",
@@ -14,7 +14,8 @@
     "@types/react": "^16.8.14",
     "@types/react-dom": "^16.8.4",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "react-dom": "^16.8.6",
+    "trc-sheet": "^1.7.0"
   },
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.1",

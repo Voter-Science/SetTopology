@@ -7,10 +7,25 @@ import * as XC from 'trc-httpshim/xclient'
 import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
 import * as trcSheet from 'trc-sheet/sheet'
+import { checkPropTypes } from "prop-types";
 
-// declare var _sheetRef : any; // set by PluginMain, after page load.
+// https://www.leighhalliday.com/introducing-react-context-api
+// const AppContext = React.createContext( {});
 
-export interface IMajorProps { }
+// Replace this with a react context? 
+var _trcGlobal : IMajorState;
+declare var _trcGlobal : IMajorState;
+
+// Display the current sheet name 
+export class SheetName extends React.Component<{}, {}> {
+    render() {        
+            return <div>Major: {_trcGlobal._info.Name}</div>            
+    }
+}
+
+export interface IMajorProps { 
+    children? : any;
+}
 export interface IMajorState {
     //AuthToken: string;
     SheetClient: trcSheet.SheetClient;
@@ -21,7 +36,7 @@ export interface IMajorState {
 
 }
 
-export class Major extends React.Component<{}, IMajorState> {
+export class Major extends React.Component<IMajorProps, IMajorState> {
 
     public constructor(props: any) {
         super(props);
@@ -36,7 +51,8 @@ export class Major extends React.Component<{}, IMajorState> {
             if (!this.state._info) {
                 return <div>Major! Not yet loaded: {this.state.SheetId}</div>;
             } else {
-                return <div>Major: {this.state._info.Name}</div>
+                // return <div>Major: {this.state._info.Name}</div>
+                return this.props.children;
             }
         }
     }
@@ -53,8 +69,12 @@ export class Major extends React.Component<{}, IMajorState> {
             SheetClient: sheetClient
         }, () => {
             // State is updated 
-
-            this.state.SheetClient.getInfoAsync().then((info) => {
+            
+            this.state.SheetClient.getInfoAsync().then((info) => {                
+                _trcGlobal = {
+                    ...this.state,                    
+                };
+                _trcGlobal._info = info;
                 this.setState({ _info: info });
             });
         });
@@ -64,7 +84,9 @@ export class Major extends React.Component<{}, IMajorState> {
 
 ReactDOM.render(
     <div>
-        <Major></Major>
+        <Major>
+            The current sheet is: <SheetName />
+        </Major>
         <Hello compiler="TypeScript" framework="React" />
     </div>,
     document.getElementById("example")

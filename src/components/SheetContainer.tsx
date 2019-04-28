@@ -14,25 +14,34 @@ import * as trcSheet from 'trc-sheet/sheet'
 // const AppContext = React.createContext( {});
 
 // Replace this with a react context? 
-var _trcGlobal : IMajorState;
+declare var _trcGlobal : IMajorState;
 
 export interface IMajorProps { 
-    children? : any;
+    // children? : any;
+    onReady : () => any; // render body when ready 
 }
 export interface IMajorState {
     //AuthToken: string;
     SheetClient: trcSheet.SheetClient;
     SheetId: string;
 
+    _updating : boolean;
+
     _info: trcSheet.ISheetInfoResult;
     // Sheet Contents?  Sheet History? 
 }
 
-export class Major extends React.Component<IMajorProps, IMajorState> {
+export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
 
     public constructor(props: any) {
         super(props);
 
+        // Ordering:
+        // - DOM has an html element 
+        // - <SheetContainer> is rendered to that element. This sets the global
+        // - Load complete.
+        // - PluginMain() is called (after the OnLoad event). This reads the global
+        //     to get <SheetContainer> and call setSheetRef();
         var x: any = window;
         x.mainMajor = this;
     }
@@ -40,17 +49,42 @@ export class Major extends React.Component<IMajorProps, IMajorState> {
         if (!this.state) {
             return <div>Loading...</div>
         } else {
+            if (this.state._updating) {
+                return <div>Updating... please wait ...</div> 
+            }
             if (!this.state._info) {
                 return <div>Major! Not yet loaded: {this.state.SheetId}</div>;
             } else {
                 // return <div>Major: {this.state._info.Name}</div>
-                return this.props.children;
+                //return this.props.children;
+                return this.props.onReady();
             }
         }
     }
 
-    // Timer to pick up _sheetRef? 
+    // Signal control will begin loading. 
+    public  beginLoad() : void {
+        this.setState({
+            _updating : true 
+        });
+        // Will trigger a render. 
+    }
+    
+    public check() : void {
+        this.setState({
+            _updating : false 
+        });
+        /*
+        var adminClient = new trcSheet.SheetAdminClient(_trcGlobal.SheetClient);
+        adminClient.WaitAsync().then( ()=> {
 
+
+        }).catch( (err) => {
+
+        });*/
+    }
+    
+    // Called by PluginMain() once sheetId is available. 
     public setSheetRef(sheetRef: any): void {
         var httpClient = XC.XClient.New(sheetRef.Server, sheetRef.AuthToken, undefined);
         var sheetClient = new trcSheet.SheetClient(httpClient, sheetRef.SheetId);

@@ -16,11 +16,16 @@ declare var _trcGlobal : IMajorState;
 
 // Select a column name from the sheet. 
 export interface IColumnSelectorProps {
-    // Add props to restrict selection (Predicate on ColumnInfo?)
+    // Optional predicate to restrict which columns are included
+    Include? : (ci : trcSheet.IColumnInfo) => boolean; 
+
     OnChange : (ci : trcSheet.IColumnInfo) => void; // CAlled when a selection is made
 }
 export class ColumnSelector extends React.Component<IColumnSelectorProps, {}> {
     constructor(props : any) {
+        if (!props.Include ) {
+            props.Include= (ci : any) => true;
+        }
         super(props);
         this.state = { };    
         this.handleChange = this.handleChange.bind(this);
@@ -28,7 +33,7 @@ export class ColumnSelector extends React.Component<IColumnSelectorProps, {}> {
 
     private getValues() : string[] {
         var cs = _trcGlobal._info.Columns;
-        return cs.map(c => c.Name);
+        return cs.map(c => this.props.Include(c) ? c.Name : null);
     }
 
     handleChange(event: any) {
@@ -39,9 +44,16 @@ export class ColumnSelector extends React.Component<IColumnSelectorProps, {}> {
         this.props.OnChange(ci);
       }
 
-    render() {        
+      
+
+    render() {     
+        // <option> must have a 'key' property for React.    
          return <select onChange={this.handleChange}>
-             {this.getValues().map((name,idx) => <option value={idx}>{name}</option>)}
+             {this.getValues().map((name,idx) =>              
+             name ? 
+             <option key={idx} value={idx}>{name}</option>
+             : null
+             )}
          </select>   
     }
 }

@@ -1,5 +1,9 @@
 // Wraps accessing a Sheet's info, contents, history, etc. 
 // Exposes sheet info  to child elements. 
+// Provides top-level UI for notifying loading state, missing requirements, etc. 
+// Can enforce requirements like:
+//  - required columns 
+//  - Must be top-level
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -8,7 +12,7 @@ import * as XC from 'trc-httpshim/xclient'
 import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
 import * as trcSheet from 'trc-sheet/sheet'
-
+import * as sheetContents from 'trc-sheet/sheetContents'
 
 // https://www.leighhalliday.com/introducing-react-context-api
 // const AppContext = React.createContext( {});
@@ -16,8 +20,11 @@ import * as trcSheet from 'trc-sheet/sheet'
 // Replace this with a react context? 
 declare var _trcGlobal : IMajorState;
 
-export interface IMajorProps { 
-    // children? : any;
+
+export interface IMajorProps {         
+    fetchContents : boolean;
+    // fetchRebase, fetchHistory, etc 
+    // requireTopLevel, requireColumn
     onReady : () => any; // render body when ready 
 }
 export interface IMajorState {
@@ -25,9 +32,10 @@ export interface IMajorState {
     SheetClient: trcSheet.SheetClient;
     SheetId: string;
 
-    _updating : boolean;
+    _updating? : boolean;
 
-    _info: trcSheet.ISheetInfoResult;
+    _info?: trcSheet.ISheetInfoResult;
+    _contents? : sheetContents.ISheetContents
     // Sheet Contents?  Sheet History? 
 }
 
@@ -63,6 +71,7 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
     }
 
     // Signal control will begin loading. 
+    // Will disable entire frame. 
     public  beginLoad() : void {
         this.setState({
             _updating : true 
@@ -93,16 +102,50 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
         this.setState({
             SheetId: sheetRef.SheetId,
             SheetClient: sheetClient
-        }, () => {
+        }, () => {     
+            _trcGlobal = { 
+                SheetId : sheetRef.SheetId, 
+                 SheetClient : sheetClient
+            };
+
+            // Possible things to get:
+            // - Info (small)
+            // - Contents 
+            // - Deltas 
+            // - RebaseLog
+            
             // State is updated 
+
+            if (this.props.fetchContents) {
+                this.state.SheetClient.getSheetContentsAsync().then( (contents)=> 
+                {
+                    _trcGlobal._contents = contents;
+                    this.checkDone();                    
+                })
+            }
             
             this.state.SheetClient.getInfoAsync().then((info) => {                
-                _trcGlobal = {
-                    ...this.state,                    
-                };
-                _trcGlobal._info = info;
-                this.setState({ _info: info });
+                _trcGlobal._info = info;               
+                this.checkDone();
             });
         });
+    }
+
+    private checkDone() : void {
+        if (!_trcGlobal) {
+            return;
+        }
+        if (this.props.fetchContents && !_trcGlobal._contents) {
+            return;
+        }
+        if (!_trcGlobal._info){
+            return;
+        }
+
+        // Done! Now update the state once with everything 
+        this.setState({
+            _info: _trcGlobal._info,
+            _contents : _trcGlobal._contents
+        });        
     }
 }

@@ -11,16 +11,10 @@ import { checkPropTypes } from "prop-types";
 
 
 import { ColumnSelector } from "./components/ColumnSelector";
-import { SheetContainer } from './components/SheetContainer'
+import { SheetContainer, IMajorState } from './components/SheetContainer'
 
-export interface IMajorState {
-    //AuthToken: string;
-    SheetClient: trcSheet.SheetClient;
-    SheetId: string;
+import * as bcl from  'trc-analyze/collections'
 
-    _info: trcSheet.ISheetInfoResult;
-    // Sheet Contents?  Sheet History? 
-}
 declare var _trcGlobal : IMajorState;
 
 
@@ -33,13 +27,14 @@ export class SheetName extends React.Component<{}, {}> {
 
 // 
 export class App extends React.Component<{},{
-    columnInfo : trcSheet.IColumnInfo
+    columnInfo : trcSheet.IColumnInfo,
+    shardValues : string[]
 }>
 {
     public constructor(props : any) {
         super(props);
 
-        this.state = { columnInfo : undefined };
+        this.state = { columnInfo : undefined, shardValues : [] };
         this.renderBody = this.renderBody.bind(this);
         this.handle = this.handle.bind(this);
     }
@@ -52,8 +47,15 @@ export class App extends React.Component<{},{
     }
 
     private setOption(ci : trcSheet.IColumnInfo) : void {
+        // Get # of uniques 
+        var vals = _trcGlobal._contents[ci.Name];
+        var counter = new bcl.HashCount();
+        vals.map(x => counter.Add(x));
+                
+
         this.setState(
             {
+                shardValues : counter.getKeys(),
                 columnInfo:  ci
             }
         );
@@ -79,11 +81,23 @@ export class App extends React.Component<{},{
 
     }
 
+    // Tips on conditional rendering: https://reactjs.org/docs/conditional-rendering.html
+
     renderTopology() {
         return <div>
             This sheet does not have a current topology. Please select a column to split by:
-<ColumnSelector  Include={ (ci) => ci.IsReadOnly && ci.Name != "RecId" }
-OnChange={(e) => this.setOption(e)} />
+<ColumnSelector  
+    Include={ (ci) => ci.IsReadOnly && ci.Name != "RecId" }
+    Value={this.state.columnInfo}
+    OnChange={(e) => this.setOption(e)} />
+
+            { this.state.shardValues.length > 0 && 
+            <div>This field has <b>{this.state.shardValues.length}</b> unique values: 
+            <ul>
+                {this.state.shardValues.map((x,idx) => <li key={idx}>{x}</li>)}
+            </ul>
+            </div>
+             }
 
             <button onClick={this.handle} disabled={!this.state.columnInfo}>Set Toplogy</button>
         </div>
@@ -96,7 +110,7 @@ OnChange={(e) => this.setOption(e)} />
 
     // Called when the sheet has loaded. 
     renderBody() {
-return  <div> The current sheet is: <SheetName />
+        return  <div> The current sheet is: <SheetName />
         { this.getTopology() ? this.renderInput() : this.renderTopology() }    </div>
     }
 
@@ -104,7 +118,7 @@ return  <div> The current sheet is: <SheetName />
     render() {
         return <div>
             <p>This plugin helps with topology.</p>
-            <SheetContainer onReady={this.renderBody}></SheetContainer>
+            <SheetContainer onReady={this.renderBody} fetchContents={true}></SheetContainer>
         </div> 
 
     };

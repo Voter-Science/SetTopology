@@ -1,8 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { Hello } from "./components/Hello";
-
 import * as XC from 'trc-httpshim/xclient'
 import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
@@ -25,6 +23,26 @@ export class SheetName extends React.Component<{}, {}> {
     }
 }
 
+// List 
+export class ListData extends React.Component<{
+    children? :any, // Banner, only display if we have items
+    items : string[]
+}, {}> {
+    render() {     
+        if (this.props.items.length == 0)   
+        {
+            return null;
+        }
+        
+        return  <div>
+            {this.props.children} 
+            <ul>
+                {this.props.items.map((x,idx) => <li key={idx}>{x}</li>)}
+            </ul>
+            </div>  
+    }
+}
+
 // 
 export class App extends React.Component<{},{
     columnInfo : trcSheet.IColumnInfo,
@@ -40,8 +58,7 @@ export class App extends React.Component<{},{
     }
     // undefined in no topology 
     private getTopology() : string {
-        var x : any = _trcGlobal._info;
-        var y = x.Topology;
+        var y  = _trcGlobal._info.Topology;
         if (!y) { return undefined; }
         return y.AutoCreateChildrenForColumnName;
     }
@@ -61,7 +78,7 @@ export class App extends React.Component<{},{
         );
     }
     private handle() {
-        alert("Activate: " + this.state.columnInfo.Name);
+        // alert("Activate: " + this.state.columnInfo.Name);
 
         // Call Long running op
         // Disable for running
@@ -69,15 +86,26 @@ export class App extends React.Component<{},{
         var x: any = window;
         x.mainMajor.beginLoad();
 
+        /*
         setTimeout( ()=> {
             x.mainMajor.check();
         }, 3000);
-
-        /*
+        */
+        var topology : trcSheet.IMaintenanceSetTopology = {
+            Topology : {
+                AutoCreateChildrenForColumnName : this.state.columnInfo.Name
+                }
+        };
+        
+       
         var adminClient = new trcSheet.SheetAdminClient(_trcGlobal.SheetClient);
-        adminClient.postOpRefreshAsync().then( ()=> {
+        adminClient.postOpSetTopologyAsync(topology).then( ()=> {
             // 202 polling finished. Sheet is updated. 
-        });*/
+            x.mainMajor.checkManagedmentOp();
+        }).catch( (err) => {
+            // $$$ Can we catch this via ReactDOM error handling?
+            alert (JSON.stringify(err));
+        });
 
     }
 
@@ -91,14 +119,10 @@ export class App extends React.Component<{},{
     Value={this.state.columnInfo}
     OnChange={(e) => this.setOption(e)} />
 
-            { this.state.shardValues.length > 0 && 
-            <div>This field has <b>{this.state.shardValues.length}</b> unique values: 
-            <ul>
-                {this.state.shardValues.map((x,idx) => <li key={idx}>{x}</li>)}
-            </ul>
-            </div>
-             }
-
+            <ListData items={this.state.shardValues}>
+                This field has {this.state.shardValues.length} unique values:
+            </ListData>
+            
             <button onClick={this.handle} disabled={!this.state.columnInfo}>Set Toplogy</button>
         </div>
     }

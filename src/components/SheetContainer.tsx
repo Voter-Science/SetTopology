@@ -96,21 +96,26 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
         this.setState({
             _updating : true 
         });
-        // Will trigger a render. 
+        // state update will trigger a render. 
     }
     
-    public check() : void {
-        this.setState({
-            _updating : false 
-        });
-        /*
+    public checkManagedmentOp() : void {
         var adminClient = new trcSheet.SheetAdminClient(_trcGlobal.SheetClient);
         adminClient.WaitAsync().then( ()=> {
+            // Management Operation could have changed everything. 
+            // Reload to trigger rebuilding all teh caches. 
+            location.reload(); 
 
-
+            this.setState({
+                _updating : false 
+            });
         }).catch( (err) => {
+            alert (JSON.stringify(err));
 
-        });*/
+            this.setState({
+                _updating : false 
+            });
+        });
     }
     
     // Called by PluginMain() once sheetId is available. 

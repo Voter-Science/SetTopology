@@ -16,7 +16,7 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "trc-analyze": "^1.6.0",
-    "trc-sheet": "^1.7.0"
+    "trc-sheet": "^1.9.0"
   },
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.1",

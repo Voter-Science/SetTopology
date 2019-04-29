@@ -118,7 +118,11 @@ export class App extends React.Component<{},{
     render() {
         return <div>
             <p>This plugin helps with topology.</p>
-            <SheetContainer onReady={this.renderBody} fetchContents={true}></SheetContainer>
+            <SheetContainer 
+                onReady={this.renderBody}                 
+                fetchContents={true}
+                requireTop ={true}>
+            </SheetContainer>
         </div> 
 
     };

@@ -21,8 +21,13 @@ import * as sheetContents from 'trc-sheet/sheetContents'
 declare var _trcGlobal : IMajorState;
 
 
-export interface IMajorProps {         
-    fetchContents : boolean;
+export interface IMajorProps {     
+    // If set, then sheet must be a top-level to load
+    requireTop? : boolean; 
+
+    // IF set, fetch ISheetContents before loading 
+    fetchContents? : boolean;
+    
     // fetchRebase, fetchHistory, etc 
     // requireTopLevel, requireColumn
     onReady : () => any; // render body when ready 
@@ -36,6 +41,7 @@ export interface IMajorState {
 
     _info?: trcSheet.ISheetInfoResult;
     _contents? : sheetContents.ISheetContents
+    _errorRender? : () => any;
     // Sheet Contents?  Sheet History? 
 }
 
@@ -53,10 +59,24 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
         var x: any = window;
         x.mainMajor = this;
     }
+
+    // Assumes _trcGlobal._info is set. 
+    // Warn if you don't have permission. Else link. 
+    renderRequireTopLevel() {
+        var name = this.state._info ? this.state._info.ParentName : null;
+        return <div>
+            
+            This plugin is only available for top-level sheets (see <b>{name}</b>).             
+        </div>
+    }
+
     render() {
         if (!this.state) {
             return <div>Loading...</div>
         } else {
+            if (this.state._errorRender) {
+                return this.state._errorRender();
+            }
             if (this.state._updating) {
                 return <div>Updating... please wait ...</div> 
             }
@@ -126,6 +146,16 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
             
             this.state.SheetClient.getInfoAsync().then((info) => {                
                 _trcGlobal._info = info;               
+
+                if (this.props.requireTop) {
+                    if (!!info.ParentId) {
+                        // Failure. 
+                        // Find top-level; and if we have permission to it. 
+                        this.setState({
+                            _errorRender: ()=> this.renderRequireTopLevel()
+                        });
+                    }                    
+                }
                 this.checkDone();
             });
         });

@@ -117,7 +117,7 @@ export class App extends React.Component<{},{
 
     render() {
         return <div>
-            <p>This plugin helps with topology.</p>
+            <p>This plugin lets you view and set the 'topology'.</p>
             <SheetContainer 
                 onReady={this.renderBody}                 
                 fetchContents={true}
